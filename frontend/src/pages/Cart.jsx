@@ -1,9 +1,7 @@
-import React from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { ShopContext } from "../context/ShopContext";
-import { useContext, useState, useEffect } from "react";
 import { MdDelete } from "react-icons/md";
 import CartTotal from "../components/CartTotal";
-// import { product } from "../assets/assets";
 
 const Cart = () => {
   const { products, cartItems, updateQuantity, navigate } =
@@ -34,7 +32,7 @@ const Cart = () => {
         <h2 className="text-2xl text-white mt-4 font-bold mb-4">Cart Items</h2>
       </div>
 
-      <div className="flex flex-col gap-4 ">
+      <div className="flex flex-col gap-4">
         {CartData.map((item, index) => {
           const productData = products.find(
             (product) => product._id === item._id
@@ -53,7 +51,7 @@ const Cart = () => {
                   className="w-16 h-auto object-cover"
                 />
                 <div className="flex flex-col">
-                  <p className="text-xl font-medium ">{productData.name}</p>
+                  <p className="text-xl font-medium">{productData.name}</p>
                   <p className="text-lg text-green-400">${productData.price}</p>
                 </div>
               </div>
@@ -62,7 +60,7 @@ const Cart = () => {
                 type="number"
                 min={1}
                 defaultValue={item.quantity}
-                className="w-[50px h-[35px border border-gray-400  text-center self-center]"
+                className="w-[50px] h-[35px] border border-gray-400 text-center self-center"
                 onChange={(e) =>
                   e.target.value === "" || e.target.value === "0"
                     ? null
@@ -79,12 +77,12 @@ const Cart = () => {
         })}
       </div>
 
-      <div className="flex justify-center mt-20 bg-white p-4 max-w-xl mx-auto ">
-        <div className="w-full max-w-md ">
+      <div className="flex justify-center mt-20 bg-white p-4 max-w-xl mx-auto">
+        <div className="w-full max-w-md">
           <CartTotal />
-          <div className="w-full text-end ">
+          <div className="w-full text-end">
             <button
-              className="bg-green-400 text-black text-5m mt-8 py-3 px-8 rounded hover:bg-emerald-500"
+              className="bg-green-400 text-black mt-8 py-3 px-8 rounded hover:bg-emerald-500"
               onClick={() => navigate("/checkout")}
             >
               PROCEED TO CHECKOUT

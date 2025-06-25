@@ -9,6 +9,7 @@ import Logout from "./pages/Logout";
 import Footer from "./components/Footer";
 import { Routes, Route } from "react-router-dom"; // Import Routes and Route
 import { ToastContainer } from "react-toastify";
+import Verify from "./pages/Verify";
 
 const App = () => {
   return (
@@ -23,6 +24,7 @@ const App = () => {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/logout" element={<Logout />} />
+        <Route path="/verify" element={<Verify />} />
       </Routes>
       <Footer />
     </div>

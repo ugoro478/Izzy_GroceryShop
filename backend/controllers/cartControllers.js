@@ -1,28 +1,29 @@
 import userModel from "../models/userModels.js";
+import mongoose from "mongoose";
 
-// function to add products to users cart
+// ✅ Use regular function declarations (no export keyword here)
 const addToCart = async (req, res) => {
   try {
-    const { userId, itemId } = req.body;
+    const { userId, productId } = req.body;
 
-    const userData = await userModel.findById(userId);
-    let cartData = await userData.cartData;
-
-    if (!userData) {
-      return res.status(404).json({ message: "User not found" });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
     }
 
-    if (cartData[itemId]) {
-      cartData[itemId].quantity += 1;
-    } else {
-      cartData[itemId] += 1;
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
     }
 
-    await userModel.findByIdAndUpdate(userId, { cartData });
-    res.status(200).json({ message: "Product added to cart" });
+    user.cartData[productId] = (user.cartData[productId] || 0) + 1;
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ message: "Item added to cart", cartData: user.cartData });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("ADD TO CART ERROR:", error);
+    return res.status(500).json({ error: "Failed to add item to cart" });
   }
 };
 
@@ -30,10 +31,15 @@ const updateCart = async (req, res) => {
   try {
     const { userId, itemId, quantity } = req.body;
     const userData = await userModel.findById(userId);
-    let cartData = await userData.cartData;
+    if (!userData) return res.status(404).json({ message: "User not found" });
 
+    let cartData = userData.cartData;
     cartData[itemId] = quantity;
-    await userModel.findByIdAndUpdate(userId, { cartData });
+
+    await userModel.findByIdAndUpdate("685abd7ad765dc2067a26b6c", {
+      cartData: {},
+    });
+
     res.status(200).json({ message: "Cart updated" });
   } catch (error) {
     console.log(error);
@@ -51,8 +57,8 @@ const getUserCart = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-    const cartData = userData.cartData;
 
+    const cartData = userData.cartData;
     res.json({ success: true, cartData });
   } catch (error) {
     console.log(error);
@@ -60,4 +66,5 @@ const getUserCart = async (req, res) => {
   }
 };
 
+// ✅ Export them once at the bottom
 export { addToCart, updateCart, getUserCart };

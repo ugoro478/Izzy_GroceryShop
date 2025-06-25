@@ -1,23 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { ShopContext } from "../context/ShopContext";
-import { useContext } from "react";
-import stripe from "../assets/stripe_logo.png";
+import stripeLogo from "../assets/stripe_logo.png";
 import CartTotal from "../components/CartTotal";
-import { data } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const Checkout = () => {
   const [method, setMethod] = useState("COD");
-
-  const {
-    cartItems,
-    setCartItems,
-    products,
-    getCartAmount,
-    navigate,
-    delivery_fee,
-  } = useContext(ShopContext);
-
-  const [FormDate, setFormData] = useState({
+  const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
@@ -29,18 +19,71 @@ const Checkout = () => {
     country: "",
   });
 
-  const OnChangeHandler = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
-    setFormData((data) => ({
-      ...data,
-      [name]: value,
-    }));
+  const { cartItems, setCartItems, getCartAmount, navigate, delivery_fee } =
+    useContext(ShopContext);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+
+    if (!userId || !token) {
+      toast.error("Please login first");
+      navigate("/login");
+      return;
+    }
+
+    const amount = getCartAmount() + delivery_fee;
+    const headers = { headers: { token } };
+
+    try {
+      if (method === "COD") {
+        const res = await axios.post(
+          "http://localhost:4000/api/order/place",
+          {
+            amount,
+            address: formData,
+            cartItems, // ✅ added cart items
+          },
+          headers
+        );
+        if (res.status === 200) {
+          setCartItems([]);
+          toast.success("Order placed successfully (COD)");
+          navigate("/orders");
+        }
+      } else {
+        const res = await axios.post(
+          "http://localhost:4000/api/order/stripe",
+          {
+            amount,
+            address: formData,
+            cartItems, // ✅ added cart items
+          },
+          headers
+        );
+        if (res.data.success) {
+          window.location.href = res.data.session_url;
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Order failed!");
+    }
   };
 
   return (
     <div className="bg-white px-4 md:px-20 py-8">
-      <form className="flex flex-row gap-24 pt-8 min-h-[80vh] border-t border-gray-300">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-row gap-24 pt-8 min-h-[80vh] border-t border-gray-300"
+      >
         <div className="flex flex-col gap-4 w-full max-w-[700px]">
           <fieldset className="border-2 border-gray-300 p-6 rounded-lg">
             <legend className="text-center text-2xl text-black font-semibold">
@@ -53,7 +96,7 @@ const Checkout = () => {
                   method === "stripe" ? "bg-green-400" : ""
                 }`}
               >
-                <img src={stripe} alt="" />
+                <img src={stripeLogo} alt="Stripe" />
               </div>
               <div
                 onClick={() => setMethod("COD")}
@@ -67,99 +110,40 @@ const Checkout = () => {
               </div>
             </div>
           </fieldset>
-          <div className="mt-6">
-            <h2 className="text-2xl text-black font-semibold mb-4">
-              Shipping Details
-            </h2>
-          </div>
 
-          <div className="flex gap-4 ">
+          <h2 className="text-2xl text-black font-semibold mt-6 mb-4">
+            Shipping Details
+          </h2>
+
+          {[
+            { name: "firstName", placeholder: "First Name" },
+            { name: "lastName", placeholder: "Last Name" },
+            { name: "email", placeholder: "Email", type: "email" },
+            { name: "phone", placeholder: "Phone Number" },
+            { name: "address", placeholder: "Street Address" },
+            { name: "city", placeholder: "City" },
+            { name: "state", placeholder: "State" },
+            { name: "zipcode", placeholder: "Zipcode" },
+            { name: "country", placeholder: "Country" },
+          ].map(({ name, placeholder, type = "text" }) => (
             <input
-              type="text"
-              onChange={OnChangeHandler}
-              placeholder="First Name"
-              name="firstName"
-              value={FormData.firstName}
-              className="border border-gray-400 rounded px-4 py-3 w-[95%]"
+              key={name}
+              type={type}
+              name={name}
+              placeholder={placeholder}
+              value={formData[name]}
+              onChange={handleChange}
+              className="border border-gray-400 rounded px-4 py-3 w-full mb-2"
             />
-            <input
-              type="text"
-              placeholder="Last Name"
-              onChange={OnChangeHandler}
-              name="lastName"
-              value={FormData.lastName}
-              className="border border-gray-400 rounded px-4 py-3 w-[95%]"
-            />
-          </div>
-          <input
-            type="email"
-            onChange={OnChangeHandler}
-            placeholder="Email"
-            name="email"
-            value={FormData.email}
-            className="border border-gray-400 rounded px-4 py-3 w-[95%]"
-          />
-          <input
-            type="text"
-            onChange={OnChangeHandler}
-            placeholder="Phone Number"
-            name="phone"
-            value={FormData.phone}
-            className="border border-gray-400 rounded px-4 py-3 w-[95%]"
-          />
-          <input
-            type="text"
-            onChange={OnChangeHandler}
-            placeholder="Street Address"
-            name="Street"
-            value={FormData.address}
-            className="border border-gray-400 rounded px-4 py-3 w-[95%]"
-          />
-          <div className="flex gap-4 ">
-            <input
-              type="text"
-              onChange={OnChangeHandler}
-              placeholder="city"
-              name="city"
-              value={FormData.city}
-              className="border border-gray-400 rounded px-4 py-3 w-[95%]"
-            />
-            <input
-              type="text"
-              onChange={OnChangeHandler}
-              placeholder="State"
-              name="state"
-              value={FormData.state}
-              className="border border-gray-400 rounded px-4 py-3 w-[95%]"
-            />
-          </div>
-          <div className="flex gap-4 ">
-            <input
-              type="text"
-              onChange={OnChangeHandler}
-              placeholder="Zipcode"
-              name="zipcode"
-              value={FormData.zipcode}
-              className="border border-gray-400 rounded px-4 py-3 w-[95%]"
-            />
-            <input
-              type="text"
-              onChange={OnChangeHandler}
-              placeholder="Country"
-              name="country"
-              value={FormData.country}
-              className="border border-gray-400 rounded px-4 py-3 w-[95%]"
-            />
-          </div>
+          ))}
         </div>
 
         <div className="w-[600px]">
           <CartTotal />
-          <div className="text-right mt-8 ">
+          <div className="text-right mt-8">
             <button
-              onChange={OnChangeHandler}
               type="submit"
-              className="bg-green-400 hover:bg-emerald-500 text-black w-full py-3 text-base rounded-md "
+              className="bg-green-400 hover:bg-emerald-500 text-black w-full py-3 text-base rounded-md"
             >
               PLACE ORDER
             </button>
