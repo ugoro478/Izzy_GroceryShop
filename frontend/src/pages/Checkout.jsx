@@ -29,7 +29,6 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
 
@@ -49,7 +48,7 @@ const Checkout = () => {
           {
             amount,
             address: formData,
-            cartItems, // ✅ added cart items
+            cartItems, // ✅ send cart data
           },
           headers
         );
@@ -64,7 +63,7 @@ const Checkout = () => {
           {
             amount,
             address: formData,
-            cartItems, // ✅ added cart items
+            cartItems, // ✅ send cart data
           },
           headers
         );

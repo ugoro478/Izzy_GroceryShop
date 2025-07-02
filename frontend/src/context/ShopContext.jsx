@@ -17,21 +17,32 @@ const ShopContextProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const addToCart = async (itemId) => {
+    const isValidId = /^[0-9a-fA-F]{24}$/.test(itemId);
+    const isKnownProduct = products.some((p) => p._id === itemId);
+
+    if (!isValidId || !isKnownProduct) {
+      toast.error("Invalid product. Could not add to cart.");
+      console.warn("Blocked invalid ID:", itemId);
+      return;
+    }
+
     const updatedCart = { ...cartItems };
     updatedCart[itemId] = (updatedCart[itemId] || 0) + 1;
     setCartItems(updatedCart);
     toast.success(`Added to cart`);
+    console.log("🛒 Adding to cart:", itemId);
+    console.log("🔑 Token:", token);
 
     if (token) {
       try {
         await axios.post(
           `${backendUrl}/api/cart/add`,
-          { itemId },
+          { productId: itemId, quantity: 1 }, // ✅ Corrected this
           { headers: { token } }
         );
       } catch (error) {
-        console.error(error);
-        toast.error(error.message);
+        console.error("❌ Add to cart error:", error);
+        toast.error(error.response?.data?.message || "Server error");
       }
     }
   };
@@ -88,6 +99,22 @@ const ShopContextProvider = ({ children }) => {
       0
     );
   };
+  useEffect(() => {
+    const cleanCart = () => {
+      const validCart = {};
+      for (const [id, qty] of Object.entries(cartItems)) {
+        if (
+          /^[0-9a-fA-F]{24}$/.test(id) &&
+          products.some((p) => p._id === id)
+        ) {
+          validCart[id] = qty;
+        }
+      }
+      setCartItems(validCart);
+    };
+
+    cleanCart();
+  }, [products]);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");

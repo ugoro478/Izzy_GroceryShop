@@ -3,8 +3,10 @@ import mongoose from "mongoose";
 
 // ✅ Use regular function declarations (no export keyword here)
 const addToCart = async (req, res) => {
+  console.log("Incoming userId from token:", req.userId);
   try {
-    const { userId, productId } = req.body;
+    const userId = req.userId; // ✅ Get userId from token middleware
+    const { productId } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ error: "Invalid user ID" });
