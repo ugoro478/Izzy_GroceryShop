@@ -1,12 +1,10 @@
 import React, { useState, useContext } from "react";
 import { ShopContext } from "../context/ShopContext";
-import stripeLogo from "../assets/stripe_logo.png";
 import CartTotal from "../components/CartTotal";
 import axios from "axios";
 import { toast } from "react-toastify";
 
 const Checkout = () => {
-  const [method, setMethod] = useState("COD");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -29,6 +27,7 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
 
@@ -42,37 +41,23 @@ const Checkout = () => {
     const headers = { headers: { token } };
 
     try {
-      if (method === "COD") {
-        const res = await axios.post(
-          "http://localhost:4000/api/order/place",
-          {
-            amount,
-            address: formData,
-            cartItems, // ✅ send cart data
-          },
-          headers
-        );
-        if (res.status === 200) {
-          setCartItems([]);
-          toast.success("Order placed successfully (COD)");
-          navigate("/orders");
-        }
-      } else {
-        const res = await axios.post(
-          "http://localhost:4000/api/order/stripe",
-          {
-            amount,
-            address: formData,
-            cartItems, // ✅ send cart data
-          },
-          headers
-        );
-        if (res.data.success) {
-          window.location.href = res.data.session_url;
-        }
+      const res = await axios.post(
+        "http://localhost:4000/api/order/place",
+        {
+          amount,
+          address: formData,
+          cartItems, // ✅ make sure cartItems is valid object
+        },
+        headers
+      );
+
+      if (res.status === 200) {
+        setCartItems([]); // clear cart
+        toast.success("Order placed successfully!");
+        navigate("/orders");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Checkout Error:", err);
       toast.error("Order failed!");
     }
   };
@@ -84,33 +69,7 @@ const Checkout = () => {
         className="flex flex-row gap-24 pt-8 min-h-[80vh] border-t border-gray-300"
       >
         <div className="flex flex-col gap-4 w-full max-w-[700px]">
-          <fieldset className="border-2 border-gray-300 p-6 rounded-lg">
-            <legend className="text-center text-2xl text-black font-semibold">
-              Payment Options
-            </legend>
-            <div className="flex flex-row gap-4">
-              <div
-                onClick={() => setMethod("stripe")}
-                className={`flex items-center border border-gray-300 px-20 py-4 rounded-md cursor-pointer ${
-                  method === "stripe" ? "bg-green-400" : ""
-                }`}
-              >
-                <img src={stripeLogo} alt="Stripe" />
-              </div>
-              <div
-                onClick={() => setMethod("COD")}
-                className={`flex items-center border border-gray-300 px-20 py-4 rounded-md cursor-pointer ${
-                  method === "COD" ? "bg-green-400" : "text-gray-300"
-                }`}
-              >
-                <span className="text-xl text-black font-bold">
-                  CASH ON DELIVERY
-                </span>
-              </div>
-            </div>
-          </fieldset>
-
-          <h2 className="text-2xl text-black font-semibold mt-6 mb-4">
+          <h2 className="text-2xl text-black font-semibold mb-4">
             Shipping Details
           </h2>
 
@@ -132,6 +91,7 @@ const Checkout = () => {
               placeholder={placeholder}
               value={formData[name]}
               onChange={handleChange}
+              required
               className="border border-gray-400 rounded px-4 py-3 w-full mb-2"
             />
           ))}

@@ -91,5 +91,17 @@ const adminLogin = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
+const userOrder = async (req, res) => {
+  try {
+    const { userId } = req.body;
 
-export { loginUser, registerUser, adminLogin }; // Exporting the functions
+    const order = await orderModel.find({ userId }).sort({ date: -1 });
+
+    res.json({ success: true, order });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Could not fetch orders" });
+  }
+};
+
+export { loginUser, registerUser, adminLogin, userOrder }; // Exporting the functions

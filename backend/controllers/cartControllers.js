@@ -1,11 +1,9 @@
-import userModel from "../models/userModels.js";
 import mongoose from "mongoose";
-
-// ✅ Use regular function declarations (no export keyword here)
+import userModel from "../models/userModels.js";
 const addToCart = async (req, res) => {
   console.log("Incoming userId from token:", req.userId);
   try {
-    const userId = req.userId; // ✅ Get userId from token middleware
+    const userId = req.userId;
     const { productId } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -28,27 +26,6 @@ const addToCart = async (req, res) => {
     return res.status(500).json({ error: "Failed to add item to cart" });
   }
 };
-
-const updateCart = async (req, res) => {
-  try {
-    const { userId, itemId, quantity } = req.body;
-    const userData = await userModel.findById(userId);
-    if (!userData) return res.status(404).json({ message: "User not found" });
-
-    let cartData = userData.cartData;
-    cartData[itemId] = quantity;
-
-    await userModel.findByIdAndUpdate("685abd7ad765dc2067a26b6c", {
-      cartData: {},
-    });
-
-    res.status(200).json({ message: "Cart updated" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 const getUserCart = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -67,6 +44,21 @@ const getUserCart = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+const updateCart = async (req, res) => {
+  try {
+    const { userId, itemId, quantity } = req.body;
+    const userData = await userModel.findById(userId);
+    if (!userData) return res.status(404).json({ message: "User not found" });
 
-// ✅ Export them once at the bottom
+    userData.cartData[itemId] = quantity;
+    await userData.save();
+
+    res
+      .status(200)
+      .json({ message: "Cart updated", cartData: userData.cartData });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 export { addToCart, updateCart, getUserCart };
